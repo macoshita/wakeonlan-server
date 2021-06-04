@@ -1,0 +1,13 @@
+[Unit]
+Description=wakeonlan server
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/path/to/wakeonlan-server
+Environment="PATH=/path/to/wakeonlan-server/env/bin"
+ExecStart=/path/to/wakeonlan-server/env/bin/uwsgi --ini wol.ini
+
+[Install]
+WantedBy=multi-user.target

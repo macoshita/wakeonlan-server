@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wake-On-LAN</title>
+  <link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
+</head>
+<body>
+  <h1>Wake-On-LAN</h1>
+  {% if message %}
+    <h2 style="color: green">{{ message }}</h2>
+  {% endif %}
+  <form method="post">
+    <p>
+      <label>MAC Address</label><br>
+      <input type="text" name="addr" value="{{ addr }}">
+    </p>
+    <p>
+      <button>Send Magic Packet</button>
+    </p>
+  </form>
+</body>
+</html>
