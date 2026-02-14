@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route("/wol", methods=['GET', 'POST'])
 def wol():
-    addr = request.args.get('addr', '')
+    addr = request.form.get('addr', '')
     message = ""
 
     if request.method == 'POST':
