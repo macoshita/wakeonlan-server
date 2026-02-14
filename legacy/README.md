@@ -1,6 +1,6 @@
 # Wake-On-LAN Server
 
-![image](./image.png)
+![image](../image.png)
 
 ## What is it?
 
