@@ -25,9 +25,20 @@ There is no configuration file. It starts on port 3000.
 ### Installation
 
 It is recommended to place the binary in `/usr/local/bin`.
+You can download the latest release from GitHub.
 
 ```bash
-sudo cp target/release/wakeonlan-server /usr/local/bin/
+# For Raspberry Pi 3/4/5 (64bit)
+curl -L -o wakeonlan-server.tar.gz https://github.com/macoshita/wakeonlan-server/releases/latest/download/wakeonlan-server-linux-arm64.tar.gz
+tar -xzf wakeonlan-server.tar.gz
+sudo mv wakeonlan-server /usr/local/bin/
+rm wakeonlan-server.tar.gz
+
+# For Intel/AMD 64bit
+curl -L -o wakeonlan-server.tar.gz https://github.com/macoshita/wakeonlan-server/releases/latest/download/wakeonlan-server-linux-amd64.tar.gz
+tar -xzf wakeonlan-server.tar.gz
+sudo mv wakeonlan-server /usr/local/bin/
+rm wakeonlan-server.tar.gz
 ```
 
 ### Usage
@@ -67,7 +78,6 @@ A Rust environment is required.
 ```bash
 cargo build --release
 ```
-
 
 ### Cross-compilation
 
