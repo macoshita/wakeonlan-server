@@ -844,7 +844,7 @@ checksum = "1ccf60b60ad7e5b1b37372c5134cbcab4db0706c231d212e0c643a077462bc8f"
 
 [[package]]
 name = "wakeonlan-server"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "askama",
  "axum",
