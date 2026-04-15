@@ -1,6 +1,8 @@
 use axum::{
     extract::{Form, Query},
-    response::{Html, IntoResponse, Response},
+    http::header::{COOKIE, SET_COOKIE},
+    http::HeaderMap,
+    response::{Html, IntoResponse, Response, Redirect},
     routing::get,
     Router,
 };
@@ -156,44 +158,77 @@ fn run_command(cmd: &str, args: &[&str]) {
     }
 }
 
-async fn wol_get(Query(query): Query<WolQuery>) -> impl IntoResponse {
-    HtmlTemplate(WolTemplate {
-        message: None,
+async fn wol_get(headers: HeaderMap, Query(query): Query<WolQuery>) -> impl IntoResponse {
+    let mut message = None;
+
+    // Extract message from Cookie if present
+    if let Some(cookie_header) = headers.get(COOKIE) {
+        if let Ok(cookie_str) = cookie_header.to_str() {
+            for cookie in cookie_str.split(';') {
+                let cookie = cookie.trim();
+                if let Some(msg) = cookie.strip_prefix("flash_message=") {
+                    message = Some(urlencoding::decode(msg).unwrap_or_default().into_owned());
+                    break;
+                }
+            }
+        }
+    }
+
+    let has_message = message.is_some();
+    let mut response = HtmlTemplate(WolTemplate {
+        message,
         addr: query.addr.unwrap_or_default(),
     })
+    .into_response();
+
+    // Clear the flash message cookie
+    if has_message {
+        response.headers_mut().append(
+            SET_COOKIE,
+            "flash_message=; Path=/wol; Max-Age=0; HttpOnly".parse().unwrap(),
+        );
+    }
+
+    response
 }
 
 async fn wol_post(Form(form): Form<WolForm>) -> impl IntoResponse {
     let message = if let Some(mac) = parse_mac(&form.addr) {
         let magic_packet = MagicPacket::new(&mac);
         match magic_packet.send() {
-            Ok(_) => Some("Sent magic packet".to_string()),
-            Err(_) => Some("Failed to send magic packet".to_string()),
+            Ok(_) => "Sent magic packet",
+            Err(_) => "Failed to send magic packet",
         }
     } else {
-        Some("Invalid MAC address".to_string())
+        "Invalid MAC address"
     };
 
-    HtmlTemplate(WolTemplate {
-        message,
-        addr: form.addr,
-    })
+    let mut response = Redirect::to(&format!("/wol?addr={}", form.addr)).into_response();
+    
+    let cookie_value = format!(
+        "flash_message={}; Path=/wol; HttpOnly",
+        urlencoding::encode(message)
+    );
+    
+    response.headers_mut().append(
+        SET_COOKIE,
+        cookie_value.parse().unwrap(),
+    );
+
+    response
 }
 
 fn parse_mac(s: &str) -> Option<[u8; 6]> {
-    let bytes: Vec<u8> = s
-        .split(|c| c == ':' || c == '-')
-        .filter(|part| !part.is_empty())
-        .filter_map(|part| u8::from_str_radix(part, 16).ok())
-        .collect();
-
-    if bytes.len() == 6 {
-        let mut arr = [0u8; 6];
-        arr.copy_from_slice(&bytes);
-        Some(arr)
-    } else {
-        None
+    let clean_s = s.replace(':', "").replace('-', "");
+    if clean_s.len() != 12 {
+        return None;
     }
+
+    let mut arr = [0u8; 6];
+    for i in 0..6 {
+        arr[i] = u8::from_str_radix(&clean_s[i * 2..i * 2 + 2], 16).ok()?;
+    }
+    Some(arr)
 }
 
 struct HtmlTemplate<T>(T);
@@ -211,5 +246,19 @@ where
             )
                 .into_response(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_mac() {
+        assert_eq!(parse_mac("01:23:45:67:89:AB"), Some([0x01, 0x23, 0x45, 0x67, 0x89, 0xAB]));
+        assert_eq!(parse_mac("01-23-45-67-89-AB"), Some([0x01, 0x23, 0x45, 0x67, 0x89, 0xAB]));
+        assert_eq!(parse_mac("0123456789AB"), Some([0x01, 0x23, 0x45, 0x67, 0x89, 0xAB]));
+        assert_eq!(parse_mac("invalid"), None);
+        assert_eq!(parse_mac("01:23:45"), None);
     }
 }

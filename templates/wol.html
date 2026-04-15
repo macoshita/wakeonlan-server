@@ -10,7 +10,11 @@
 <body>
   <h1>Wake-On-LAN</h1>
   {% if let Some(message) = message %}
-    <h2 style="color: green">{{ message }}</h2>
+    {% if message.contains("Failed") || message.contains("Invalid") %}
+      <h2 style="color: red">{{ message }}</h2>
+    {% else %}
+      <h2 style="color: green">{{ message }}</h2>
+    {% endif %}
   {% endif %}
   <form method="post">
     <p>
